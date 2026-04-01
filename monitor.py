@@ -41,6 +41,10 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
+            # 🔐 Integrity check (store initial hash)
+            if os.path.exists(file_path):
+                check_integrity(file_path)
+
             # Detect move using delete + create correlation
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
@@ -64,7 +68,6 @@ class MonitorHandler(FileSystemEventHandler):
 
                     print(f"[DEBUG] from_sensitive={is_from_sensitive}, to_allowed={is_to_allowed}")
 
-                    # 🔥 Deduplicated alert logic
                     move_key = f"{src_path}->{file_path}"
 
                     if is_from_sensitive and not is_to_allowed and move_key not in processed_moves:
@@ -72,11 +75,9 @@ class MonitorHandler(FileSystemEventHandler):
 
                         generate_alert("UNAUTHORIZED MOVE", file_path)
 
-                        # Optional cleanup (avoid memory growth)
                         if len(processed_moves) > 100:
                             processed_moves.clear()
 
-                # Remove delete entry
                 del recent_deletes[file_name]
 
     def on_deleted(self, event):
@@ -93,8 +94,13 @@ class MonitorHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if not event.is_directory:
             file_path = os.path.normpath(event.src_path)
+
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
+
+            # 🔐 Integrity check (detect tampering)
+            if os.path.exists(file_path):
+                check_integrity(file_path)
 
     def on_moved(self, event):
         if not event.is_directory:
@@ -103,6 +109,10 @@ class MonitorHandler(FileSystemEventHandler):
 
             print(f"[>] Moved: {src} -> {dest}")
             log_event("MOVED", dest)
+
+            # 🔐 Integrity check after move
+            if os.path.exists(dest):
+                check_integrity(dest)
 
 
 # -------------------------------

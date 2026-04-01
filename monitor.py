@@ -24,19 +24,7 @@ class MonitorHandler(FileSystemEventHandler):
     def process(self, event_type, file_path):
         try:
             file_path = os.path.normpath(file_path)
-
-            # Log event
             log_event(event_type, file_path)
-
-            # Check sensitivity
-            is_sensitive = any(s in file_path for s in sensitive_files)
-            is_allowed = any(a in file_path for a in allowed_paths)
-
-            # Alert condition
-            if is_sensitive and not is_allowed:
-                print(f"[ALERT] UNAUTHORIZED {event_type} -> {file_path}")
-                generate_alert(event_type, file_path)
-
         except Exception as e:
             print(f"[ERROR] {e}")
 
@@ -59,27 +47,37 @@ class MonitorHandler(FileSystemEventHandler):
             self.process("MODIFIED", event.src_path)
 
 
-   def on_moved(self, event):
-    if not event.is_directory:
-        src_path = os.path.normpath(event.src_path)
-        dest_path = os.path.normpath(event.dest_path)
+    def on_moved(self, event):
+        if not event.is_directory:
+            src_path = os.path.normpath(event.src_path)
+            dest_path = os.path.normpath(event.dest_path)
 
-        src_name = os.path.basename(src_path)
-        dest_name = os.path.basename(dest_path)
+            src_name = os.path.basename(src_path)
+            dest_name = os.path.basename(dest_path)
 
-        print(f"[>] Moved: {src_name} -> {dest_name}")
+            print(f"[>] Moved: {src_name} -> {dest_name}")
 
-        # Log movement
-        log_event("MOVED", dest_path)
+            # Log movement
+            log_event("MOVED", dest_path)
 
-        # CRITICAL FIX: check source + destination
-        is_from_sensitive = any(s in src_path for s in sensitive_files)
-        is_to_allowed = any(a in dest_path for a in allowed_paths)
+            # Detect conditions
+            is_from_sensitive = any(s in src_path for s in sensitive_files)
+            is_to_sensitive = any(s in dest_path for s in sensitive_files)
+            is_to_allowed = any(a in dest_path for a in allowed_paths)
 
-        # Alert condition
-        if is_from_sensitive and not is_to_allowed:
-            print(f"[ALERT] UNAUTHORIZED MOVE -> {dest_path}")
-            generate_alert("MOVED", dest_path)
+            # CASE 1: Sensitive → Non-Allowed (UNAUTHORIZED)
+            if is_from_sensitive and not is_to_allowed:
+                print(f"[ALERT] UNAUTHORIZED MOVE -> {dest_path}")
+                generate_alert("UNAUTHORIZED MOVE", dest_path)
+
+            # CASE 2: File moved INTO sensitive folder
+            elif is_to_sensitive:
+                print(f"[ALERT] FILE MOVED INTO SENSITIVE AREA -> {dest_path}")
+                generate_alert("MOVE TO SENSITIVE", dest_path)
+
+            # CASE 3: File moved OUT of sensitive folder (allowed)
+            elif is_from_sensitive and is_to_allowed:
+                print(f"[INFO] Sensitive file moved to allowed location -> {dest_path}")
 
 
 def start_monitoring():

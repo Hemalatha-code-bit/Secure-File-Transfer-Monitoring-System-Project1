@@ -1,20 +1,17 @@
-import logging
 import os
+from datetime import datetime
 
-log_dir = "logs"
-log_file = os.path.join(log_dir, "activity.log")
+LOG_FILE = "logs/activity.log"
 
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+# Create logs folder if not exists
+if not os.path.exists("logs"):
+    os.makedirs("logs")
 
-logging.basicConfig(
-    filename=log_file,
-    level=logging.INFO,
-    format="%(asctime)s - %(message)s",
-    force=True
-)
 
 def log_event(event_type, file_path):
-    message = f"{event_type} | {file_path}"
-    logging.info(message)
-    print(f"[LOGGED] {message}")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    log_message = f"{timestamp} | {event_type} | {file_path}\n"
+
+    with open(LOG_FILE, "a") as f:
+        f.write(log_message)

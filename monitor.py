@@ -5,7 +5,7 @@ from watchdog.events import FileSystemEventHandler
 
 from alert import generate_alert
 from logger import log_event
-
+processed_moves = set()
 
 # -------------------------------
 # Load config files

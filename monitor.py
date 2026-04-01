@@ -23,12 +23,18 @@ class MonitorHandler(FileSystemEventHandler):
 
     def process(self, event_type, file_path):
         try:
+            file_path = os.path.normpath(file_path)
+
+            # Log event
             log_event(event_type, file_path)
 
-            is_sensitive = any(file_path.startswith(s) for s in sensitive_files)
-            is_allowed = any(file_path.startswith(a) for a in allowed_paths)
+            # Check sensitivity
+            is_sensitive = any(s in file_path for s in sensitive_files)
+            is_allowed = any(a in file_path for a in allowed_paths)
 
+            # Alert condition
             if is_sensitive and not is_allowed:
+                print(f"[ALERT] UNAUTHORIZED {event_type} -> {file_path}")
                 generate_alert(event_type, file_path)
 
         except Exception as e:
@@ -55,12 +61,21 @@ class MonitorHandler(FileSystemEventHandler):
 
     def on_moved(self, event):
         if not event.is_directory:
-            print(f"[>] Moved: {event.src_path} -> {event.dest_path}")
+            src_name = os.path.basename(event.src_path)
+            dest_name = os.path.basename(event.dest_path)
+
+            print(f"[>] Moved: {src_name} -> {dest_name}")
+
+            # Always treat destination as final path
             self.process("MOVED", event.dest_path)
 
 
 def start_monitoring():
     path = "C:/Users/Hemalatha/Documents"
+
+    if not os.path.exists(path):
+        print(f"[ERROR] Path not found: {path}")
+        return
 
     event_handler = MonitorHandler()
     observer = Observer()
@@ -68,12 +83,14 @@ def start_monitoring():
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
 
+    print("[+] Starting Secure File Monitoring System...")
     print(f"[+] Monitoring started on: {path}")
 
     try:
         while True:
             time.sleep(5)
     except KeyboardInterrupt:
+        print("\n[!] Stopping monitoring...")
         observer.stop()
 
     observer.join()

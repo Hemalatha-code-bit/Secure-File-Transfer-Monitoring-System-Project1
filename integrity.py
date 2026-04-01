@@ -27,7 +27,7 @@ def check_integrity(file_path):
         old_hash = hashes[file_path]
 
         if old_hash != new_hash:
-            generate_alert(f"INTEGRITY VIOLATION → {file_path}", file_path)
+            generate_alert(f"INTEGRITY VIOLATION -> {file_path}", file_path)
 
     hashes[file_path] = new_hash
     save_hashes(hashes)

@@ -73,7 +73,7 @@ class MonitorHandler(FileSystemEventHandler):
                     if is_from_sensitive and not is_to_allowed and move_key not in processed_moves:
                         processed_moves.add(move_key)
 
-                        generate_alert("UNAUTHORIZED MOVE", file_path)
+                        generate_alert("UNAUTHORIZED MOVE", file_path, "HIGH")
 
                         if len(processed_moves) > 100:
                             processed_moves.clear()

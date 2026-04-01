@@ -59,15 +59,27 @@ class MonitorHandler(FileSystemEventHandler):
             self.process("MODIFIED", event.src_path)
 
 
-    def on_moved(self, event):
-        if not event.is_directory:
-            src_name = os.path.basename(event.src_path)
-            dest_name = os.path.basename(event.dest_path)
+   def on_moved(self, event):
+    if not event.is_directory:
+        src_path = os.path.normpath(event.src_path)
+        dest_path = os.path.normpath(event.dest_path)
 
-            print(f"[>] Moved: {src_name} -> {dest_name}")
+        src_name = os.path.basename(src_path)
+        dest_name = os.path.basename(dest_path)
 
-            # Always treat destination as final path
-            self.process("MOVED", event.dest_path)
+        print(f"[>] Moved: {src_name} -> {dest_name}")
+
+        # Log movement
+        log_event("MOVED", dest_path)
+
+        # CRITICAL FIX: check source + destination
+        is_from_sensitive = any(s in src_path for s in sensitive_files)
+        is_to_allowed = any(a in dest_path for a in allowed_paths)
+
+        # Alert condition
+        if is_from_sensitive and not is_to_allowed:
+            print(f"[ALERT] UNAUTHORIZED MOVE -> {dest_path}")
+            generate_alert("MOVED", dest_path)
 
 
 def start_monitoring():

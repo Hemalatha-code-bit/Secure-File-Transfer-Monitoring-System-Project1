@@ -121,7 +121,6 @@ def start_monitoring():
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
 
-    print("[+] Starting Secure File Monitoring System...")
     print(f"[+] Monitoring started on: {path}")
 
     try:

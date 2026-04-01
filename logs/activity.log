@@ -106,3 +106,11 @@
 2026-04-01 20:09:02 | MODIFIED | C:\Users\Hemalatha\Documents\Test.txt
 2026-04-01 20:09:06 | MODIFIED | C:\Users\Hemalatha\Documents\Test.txt
 2026-04-01 20:09:14 | MODIFIED | C:\Users\Hemalatha\Documents\Test.txt
+2026-04-01 21:02:04 | CREATED | C:\Users\Hemalatha\Documents\secret\Test.txt
+2026-04-01 21:02:04 | MODIFIED | C:\Users\Hemalatha\Documents\secret\Test.txt
+2026-04-01 21:02:11 | DELETED | C:\Users\Hemalatha\Documents\random\test.txt
+2026-04-01 21:02:11 | DELETED | C:\Users\Hemalatha\Documents\secret\Test.txt
+2026-04-01 21:02:11 | CREATED | C:\Users\Hemalatha\Documents\random\Test.txt
+2026-04-01 21:02:11 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt
+2026-04-01 21:02:45 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt
+2026-04-01 21:02:52 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt

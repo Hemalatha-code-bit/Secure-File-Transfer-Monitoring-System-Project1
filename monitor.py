@@ -3,7 +3,6 @@ import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from hashing import calculate_hash
 from alert import generate_alert
 from logger import log_event
 
@@ -24,15 +23,10 @@ class MonitorHandler(FileSystemEventHandler):
 
     def process(self, event_type, file_path):
         try:
-            # Normalize path (important for Windows)
-            file_path = os.path.normpath(file_path)
+            log_event(event_type, file_path)
 
-            hash_value = calculate_hash(file_path) if os.path.exists(file_path) else "N/A"
-
-            is_sensitive = any(file_path.startswith(os.path.normpath(s)) for s in sensitive_files)
-            is_allowed = any(file_path.startswith(os.path.normpath(a)) for a in allowed_paths)
-
-            log_event(event_type, file_path, hash_value)
+            is_sensitive = any(file_path.startswith(s) for s in sensitive_files)
+            is_allowed = any(file_path.startswith(a) for a in allowed_paths)
 
             if is_sensitive and not is_allowed:
                 generate_alert(event_type, file_path)
@@ -61,17 +55,12 @@ class MonitorHandler(FileSystemEventHandler):
 
     def on_moved(self, event):
         if not event.is_directory:
-            # ✅ FIX: replaced Unicode arrow with ASCII
             print(f"[>] Moved: {event.src_path} -> {event.dest_path}")
             self.process("MOVED", event.dest_path)
 
 
 def start_monitoring():
-    path = "C:/Users/Hemalatha/Documents"  # change if needed
-
-    if not os.path.exists(path):
-        print(f"[ERROR] Path does not exist: {path}")
-        return
+    path = "C:/Users/Hemalatha/Documents"
 
     event_handler = MonitorHandler()
     observer = Observer()
@@ -79,14 +68,12 @@ def start_monitoring():
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
 
-    print("[+] Starting Secure File Monitoring System...")
     print(f"[+] Monitoring started on: {path}")
 
     try:
         while True:
             time.sleep(5)
     except KeyboardInterrupt:
-        print("\n[!] Stopping monitoring...")
         observer.stop()
 
     observer.join()

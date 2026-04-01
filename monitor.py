@@ -5,6 +5,8 @@ from watchdog.events import FileSystemEventHandler
 
 from alert import generate_alert
 from logger import log_event
+
+# Deduplication set (prevents duplicate alerts)
 processed_moves = set()
 
 # -------------------------------
@@ -39,7 +41,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # Check if file was recently deleted (move detection)
+            # Detect move using delete + create correlation
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
 
@@ -62,11 +64,19 @@ class MonitorHandler(FileSystemEventHandler):
 
                     print(f"[DEBUG] from_sensitive={is_from_sensitive}, to_allowed={is_to_allowed}")
 
-                    if is_from_sensitive and not is_to_allowed:
-                        print(f"[ALERT] UNAUTHORIZED MOVE -> {file_path}")
+                    # 🔥 Deduplicated alert logic
+                    move_key = f"{src_path}->{file_path}"
+
+                    if is_from_sensitive and not is_to_allowed and move_key not in processed_moves:
+                        processed_moves.add(move_key)
+
                         generate_alert("UNAUTHORIZED MOVE", file_path)
 
-                # Remove after check
+                        # Optional cleanup (avoid memory growth)
+                        if len(processed_moves) > 100:
+                            processed_moves.clear()
+
+                # Remove delete entry
                 del recent_deletes[file_name]
 
     def on_deleted(self, event):
@@ -77,7 +87,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[-] Deleted: {file_path}")
             self.process("DELETED", file_path)
 
-            # Store delete with timestamp
+            # Store delete event with timestamp
             recent_deletes[file_name] = (file_path, time.time())
 
     def on_modified(self, event):

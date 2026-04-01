@@ -2,7 +2,7 @@ import time
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-
+from integrity import check_integrity
 from alert import generate_alert
 from logger import log_event
 

@@ -18,66 +18,64 @@ def load_file(file):
 sensitive_files = load_file("config/sensitive_files.txt")
 allowed_paths = load_file("config/allowed_paths.txt")
 
+# 🔥 Store recent deletes to detect move
+recent_deletes = {}
+
 
 class MonitorHandler(FileSystemEventHandler):
 
     def process(self, event_type, file_path):
-        try:
-            file_path = os.path.normpath(file_path)
-            log_event(event_type, file_path)
-        except Exception as e:
-            print(f"[ERROR] {e}")
-
+        file_path = os.path.normpath(file_path)
+        log_event(event_type, file_path)
 
     def on_created(self, event):
         if not event.is_directory:
-            print(f"[+] Created: {event.src_path}")
-            self.process("CREATED", event.src_path)
+            file_path = os.path.normpath(event.src_path)
+            file_name = os.path.basename(file_path)
 
+            print(f"[+] Created: {file_path}")
+            self.process("CREATED", file_path)
+
+            # 🔥 CHECK: was this file deleted recently?
+            if file_name in recent_deletes:
+                src_path = recent_deletes[file_name]
+
+                print(f"[>] Moved (detected): {src_path} -> {file_path}")
+
+                is_from_sensitive = any(s in src_path for s in sensitive_files)
+                is_to_allowed = any(a in file_path for a in allowed_paths)
+
+                if is_from_sensitive and not is_to_allowed:
+                    print(f"[ALERT] UNAUTHORIZED MOVE -> {file_path}")
+                    generate_alert("UNAUTHORIZED MOVE", file_path)
+
+                # remove after use
+                del recent_deletes[file_name]
 
     def on_deleted(self, event):
         if not event.is_directory:
-            print(f"[-] Deleted: {event.src_path}")
-            self.process("DELETED", event.src_path)
+            file_path = os.path.normpath(event.src_path)
+            file_name = os.path.basename(file_path)
 
+            print(f"[-] Deleted: {file_path}")
+            self.process("DELETED", file_path)
+
+            # 🔥 Store delete event
+            recent_deletes[file_name] = file_path
 
     def on_modified(self, event):
         if not event.is_directory:
             print(f"[*] Modified: {event.src_path}")
             self.process("MODIFIED", event.src_path)
 
-
     def on_moved(self, event):
+        # (Optional fallback if OS gives move event)
         if not event.is_directory:
-            src_path = os.path.normpath(event.src_path)
-            dest_path = os.path.normpath(event.dest_path)
+            src = os.path.normpath(event.src_path)
+            dest = os.path.normpath(event.dest_path)
 
-            src_name = os.path.basename(src_path)
-            dest_name = os.path.basename(dest_path)
-
-            print(f"[>] Moved: {src_name} -> {dest_name}")
-
-            # Log movement
-            log_event("MOVED", dest_path)
-
-            # Detect conditions
-            is_from_sensitive = any(s in src_path for s in sensitive_files)
-            is_to_sensitive = any(s in dest_path for s in sensitive_files)
-            is_to_allowed = any(a in dest_path for a in allowed_paths)
-
-            # CASE 1: Sensitive → Non-Allowed (UNAUTHORIZED)
-            if is_from_sensitive and not is_to_allowed:
-                print(f"[ALERT] UNAUTHORIZED MOVE -> {dest_path}")
-                generate_alert("UNAUTHORIZED MOVE", dest_path)
-
-            # CASE 2: File moved INTO sensitive folder
-            elif is_to_sensitive:
-                print(f"[ALERT] FILE MOVED INTO SENSITIVE AREA -> {dest_path}")
-                generate_alert("MOVE TO SENSITIVE", dest_path)
-
-            # CASE 3: File moved OUT of sensitive folder (allowed)
-            elif is_from_sensitive and is_to_allowed:
-                print(f"[INFO] Sensitive file moved to allowed location -> {dest_path}")
+            print(f"[>] Moved: {src} -> {dest}")
+            log_event("MOVED", dest)
 
 
 def start_monitoring():

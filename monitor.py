@@ -50,7 +50,10 @@ class MonitorHandler(FileSystemEventHandler):
                     src_path_lower = src_path.lower()
                     dest_path_lower = file_path.lower()
 
-                    is_from_sensitive = any(s.lower() in src_path_lower for s in sensitive_files)
+                    is_from_sensitive = any(
+                    src_path_lower.startswith(os.path.normpath(s).lower())
+                    for s in sensitive_files
+                    )
                     is_to_allowed = any(a.lower() in dest_path_lower for a in allowed_paths)
 
                     # DEBUG

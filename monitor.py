@@ -87,12 +87,12 @@ class MonitorHandler(FileSystemEventHandler):
             self.process("MODIFIED", file_path)
 
     def on_moved(self, event):
-        if not event.is_directory:
-            src = os.path.normpath(event.src_path)
-            dest = os.path.normpath(event.dest_path)
+    if not event.is_directory:
+        print(f"[>] Moved: {event.src_path} → {event.dest_path}")
 
-            print(f"[>] Moved: {src} -> {dest}")
-            log_event("MOVED", dest)
+        # Avoid duplicate alerts
+        if event.src_path != event.dest_path:
+            self.handle_event("MOVED", event.src_path, event.dest_path)
 
 
 # -------------------------------

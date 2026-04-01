@@ -47,16 +47,19 @@ class MonitorHandler(FileSystemEventHandler):
 
                     print(f"[>] Moved (detected): {src_path} -> {file_path}")
 
-                    src_path_lower = src_path.lower()
-                    dest_path_lower = file_path.lower()
+                    src_path_lower = os.path.normpath(src_path).lower()
+                    dest_path_lower = os.path.normpath(file_path).lower()
 
                     is_from_sensitive = any(
-                    src_path_lower.startswith(os.path.normpath(s).lower())
-                    for s in sensitive_files
+                        src_path_lower.startswith(os.path.normpath(s).lower())
+                        for s in sensitive_files
                     )
-                    is_to_allowed = any(a.lower() in dest_path_lower for a in allowed_paths)
 
-                    # DEBUG
+                    is_to_allowed = any(
+                        dest_path_lower.startswith(os.path.normpath(a).lower())
+                        for a in allowed_paths
+                    )
+
                     print(f"[DEBUG] from_sensitive={is_from_sensitive}, to_allowed={is_to_allowed}")
 
                     if is_from_sensitive and not is_to_allowed:

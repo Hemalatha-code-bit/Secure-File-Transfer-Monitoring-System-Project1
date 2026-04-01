@@ -41,11 +41,29 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Integrity check (store initial hash)
+            # 🔐 Integrity check
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
-            # Detect move using delete + create correlation
+            # 🔹 ADD THIS BLOCK (Unauthorized access detection)
+            file_path_lower = file_path.lower()
+
+            is_sensitive = any(
+                file_path_lower.startswith(os.path.normpath(s).lower())
+                for s in sensitive_files
+            )
+
+            is_allowed = any(
+                file_path_lower.startswith(os.path.normpath(a).lower())
+                for a in allowed_paths
+            )
+
+            if is_sensitive and not is_allowed:
+                generate_alert("UNAUTHORIZED ACCESS TO SENSITIVE FILE", file_path, "HIGH")
+
+            # -------------------------------
+            # Move detection
+            # -------------------------------
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
 
@@ -88,7 +106,6 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[-] Deleted: {file_path}")
             self.process("DELETED", file_path)
 
-            # Store delete event with timestamp
             recent_deletes[file_name] = (file_path, time.time())
 
     def on_modified(self, event):
@@ -98,9 +115,25 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
-            # 🔐 Integrity check (detect tampering)
+            # 🔐 Integrity check
             if os.path.exists(file_path):
                 check_integrity(file_path)
+
+            # 🔹 ADD THIS BLOCK (Unauthorized access detection)
+            file_path_lower = file_path.lower()
+
+            is_sensitive = any(
+                file_path_lower.startswith(os.path.normpath(s).lower())
+                for s in sensitive_files
+            )
+
+            is_allowed = any(
+                file_path_lower.startswith(os.path.normpath(a).lower())
+                for a in allowed_paths
+            )
+
+            if is_sensitive and not is_allowed:
+                generate_alert("UNAUTHORIZED ACCESS TO SENSITIVE FILE", file_path, "HIGH")
 
     def on_moved(self, event):
         if not event.is_directory:
@@ -110,7 +143,6 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[>] Moved: {src} -> {dest}")
             log_event("MOVED", dest)
 
-            # 🔐 Integrity check after move
             if os.path.exists(dest):
                 check_integrity(dest)
 

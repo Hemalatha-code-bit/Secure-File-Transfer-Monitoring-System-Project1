@@ -7,7 +7,9 @@ from alert import generate_alert
 from logger import log_event
 
 
-# Load config
+# -------------------------------
+# Load config files
+# -------------------------------
 def load_file(file):
     if not os.path.exists(file):
         return []
@@ -42,8 +44,12 @@ class MonitorHandler(FileSystemEventHandler):
 
                 print(f"[>] Moved (detected): {src_path} -> {file_path}")
 
-                is_from_sensitive = any(s in src_path for s in sensitive_files)
-                is_to_allowed = any(a in file_path for a in allowed_paths)
+                # 🔥 FULL FIX (case-insensitive + normalized)
+                src_path_lower = os.path.normpath(src_path).lower()
+                dest_path_lower = os.path.normpath(file_path).lower()
+
+                is_from_sensitive = any(s.lower() in src_path_lower for s in sensitive_files)
+                is_to_allowed = any(a.lower() in dest_path_lower for a in allowed_paths)
 
                 if is_from_sensitive and not is_to_allowed:
                     print(f"[ALERT] UNAUTHORIZED MOVE -> {file_path}")
@@ -65,11 +71,12 @@ class MonitorHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if not event.is_directory:
-            print(f"[*] Modified: {event.src_path}")
-            self.process("MODIFIED", event.src_path)
+            file_path = os.path.normpath(event.src_path)
+            print(f"[*] Modified: {file_path}")
+            self.process("MODIFIED", file_path)
 
     def on_moved(self, event):
-        # (Optional fallback if OS gives move event)
+        # Optional fallback if OS provides move event
         if not event.is_directory:
             src = os.path.normpath(event.src_path)
             dest = os.path.normpath(event.dest_path)
@@ -78,6 +85,9 @@ class MonitorHandler(FileSystemEventHandler):
             log_event("MOVED", dest)
 
 
+# -------------------------------
+# Start monitoring
+# -------------------------------
 def start_monitoring():
     path = "C:/Users/Hemalatha/Documents"
 

@@ -114,3 +114,12 @@
 2026-04-01 21:02:11 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt
 2026-04-01 21:02:45 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt
 2026-04-01 21:02:52 | MODIFIED | C:\Users\Hemalatha\Documents\random\Test.txt
+2026-04-01 21:11:54 | LOW | CREATED | C:\Users\Hemalatha\Documents\secret\zest.txt
+2026-04-01 21:11:54 | LOW | MODIFIED | C:\Users\Hemalatha\Documents\secret\zest.txt
+2026-04-01 21:12:04 | LOW | DELETED | C:\Users\Hemalatha\Documents\secret\zest.txt
+2026-04-01 21:12:04 | LOW | CREATED | C:\Users\Hemalatha\Documents\random\zest.txt
+2026-04-01 21:12:04 | LOW | MODIFIED | C:\Users\Hemalatha\Documents\random\zest.txt
+2026-04-01 21:12:31 | LOW | CREATED | C:\Users\Hemalatha\Documents\Cest.txt
+2026-04-01 21:12:31 | LOW | MODIFIED | C:\Users\Hemalatha\Documents\Cest.txt
+2026-04-01 21:12:43 | LOW | MODIFIED | C:\Users\Hemalatha\Documents\Cest.txt
+2026-04-01 21:12:46 | LOW | MODIFIED | C:\Users\Hemalatha\Documents\Cest.txt

@@ -168,8 +168,12 @@ def start_monitoring():
     try:
         while True:
             time.sleep(5)
+    from report import generate_report
     except KeyboardInterrupt:
-        print("\n[!] Stopping monitoring...")
-        observer.stop()
+    print("\n[!] Stopping monitoring...")
+    observer.stop()
+
+    # Generate final report
+    generate_report()
 
     observer.join()

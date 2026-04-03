@@ -5,9 +5,6 @@ from alert import generate_alert
 
 HASH_FILE = "hash_store.json"
 
-# Prevent duplicate alerts
-alerted_files = set()
-
 
 def load_hashes():
     if not os.path.exists(HASH_FILE):
@@ -28,7 +25,7 @@ def check_integrity(file_path):
     hashes = load_hashes()
     new_hash = calculate_hash(file_path)
 
-    # First time → just store hash (NO alert)
+    # First time → store hash only
     if file_path not in hashes:
         hashes[file_path] = new_hash
         save_hashes(hashes)
@@ -36,12 +33,10 @@ def check_integrity(file_path):
 
     old_hash = hashes[file_path]
 
-    # Only alert if hash actually changed
+    # 🔥 Detect change EVERY time
     if old_hash != new_hash:
-        if file_path not in alerted_files:
-            generate_alert("INTEGRITY VIOLATION", file_path)
-            alerted_files.add(file_path)
+        generate_alert("INTEGRITY VIOLATION", file_path)
 
-    # Update hash after check
+    # Always update hash
     hashes[file_path] = new_hash
     save_hashes(hashes)

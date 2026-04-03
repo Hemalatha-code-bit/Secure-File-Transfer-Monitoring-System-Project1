@@ -2,141 +2,132 @@ import time
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from integrity import check_integrity
+
 from alert import generate_alert
 from logger import log_event
-from report import generate_report   # ✅ FIXED (moved to top)
 
-# Deduplication set
+# Deduplication set (prevents duplicate alerts)
 processed_moves = set()
 
 # -------------------------------
 # Load config files
 # -------------------------------
 def load_file(file):
-    if not os.path.exists(file):
-        return []
-    with open(file, "r") as f:
-        return [line.strip() for line in f.readlines()]
+if not os.path.exists(file):
+return []
+with open(file, "r") as f:
+return [line.strip() for line in f.readlines()]
 
 
 sensitive_files = load_file("config/sensitive_files.txt")
 allowed_paths = load_file("config/allowed_paths.txt")
 
+# Store recent deletes to detect move
 recent_deletes = {}
-DELETE_WINDOW = 5
+DELETE_WINDOW = 5  # seconds
 
 
 class MonitorHandler(FileSystemEventHandler):
 
-    def process(self, event_type, file_path):
-        file_path = os.path.normpath(file_path)
-        log_event(event_type, file_path, "LOW")   # ✅ added severity
+def process(self, event_type, file_path):
+file_path = os.path.normpath(file_path)
+log_event(event_type, file_path)
 
-    def is_sensitive(self, file_path):
-        file_path_lower = file_path.lower()
-        return any(file_path_lower.startswith(os.path.normpath(s).lower()) for s in sensitive_files)
+def on_created(self, event):
+if not event.is_directory:
+file_path = os.path.normpath(event.src_path)
+file_name = os.path.basename(file_path)
 
-    def is_allowed(self, file_path):
-        file_path_lower = file_path.lower()
-        return any(file_path_lower.startswith(os.path.normpath(a).lower()) for a in allowed_paths)
+print(f"[+] Created: {file_path}")
+self.process("CREATED", file_path)
 
-    def on_created(self, event):
-        if not event.is_directory:
-            file_path = os.path.normpath(event.src_path)
-            file_name = os.path.basename(file_path)
+# Detect move using delete + create correlation
+if file_name in recent_deletes:
+src_path, delete_time = recent_deletes[file_name]
 
-            print(f"[+] Created: {file_path}")
-            self.process("CREATED", file_path)
+if time.time() - delete_time <= DELETE_WINDOW:
 
-            if os.path.exists(file_path):
-                check_integrity(file_path)
+print(f"[>] Moved (detected): {src_path} -> {file_path}")
 
-            # 🚨 Sensitive access
-            if self.is_sensitive(file_path) and not self.is_allowed(file_path):
-                generate_alert("UNAUTHORIZED ACCESS TO SENSITIVE FILE", file_path, "MEDIUM")
+src_path_lower = os.path.normpath(src_path).lower()
+dest_path_lower = os.path.normpath(file_path).lower()
 
-            # Move detection
-            if file_name in recent_deletes:
-                src_path, delete_time = recent_deletes[file_name]
+is_from_sensitive = any(
+src_path_lower.startswith(os.path.normpath(s).lower())
+for s in sensitive_files
+)
 
-                if time.time() - delete_time <= DELETE_WINDOW:
+is_to_allowed = any(
+dest_path_lower.startswith(os.path.normpath(a).lower())
+for a in allowed_paths
+)
 
-                    print(f"[>] Moved (detected): {src_path} -> {file_path}")
+print(f"[DEBUG] from_sensitive={is_from_sensitive}, to_allowed={is_to_allowed}")
 
-                    move_key = f"{src_path}->{file_path}"
+# 🔥 Deduplicated alert logic
+move_key = f"{src_path}->{file_path}"
 
-                    if self.is_sensitive(src_path) and not self.is_allowed(file_path) and move_key not in processed_moves:
-                        processed_moves.add(move_key)
-                        generate_alert("UNAUTHORIZED MOVE", file_path, "HIGH")
+if is_from_sensitive and not is_to_allowed and move_key not in processed_moves:
+processed_moves.add(move_key)
 
-                        if len(processed_moves) > 100:
-                            processed_moves.clear()
+generate_alert("UNAUTHORIZED MOVE", file_path)
 
-                del recent_deletes[file_name]
+# Optional cleanup (avoid memory growth)
+if len(processed_moves) > 100:
+processed_moves.clear()
 
-    def on_deleted(self, event):
-        if not event.is_directory:
-            file_path = os.path.normpath(event.src_path)
-            file_name = os.path.basename(file_path)
+# Remove delete entry
+del recent_deletes[file_name]
 
-            print(f"[-] Deleted: {file_path}")
-            self.process("DELETED", file_path)
+def on_deleted(self, event):
+if not event.is_directory:
+file_path = os.path.normpath(event.src_path)
+file_name = os.path.basename(file_path)
 
-            recent_deletes[file_name] = (file_path, time.time())
+print(f"[-] Deleted: {file_path}")
+self.process("DELETED", file_path)
 
-    def on_modified(self, event):
-        if not event.is_directory:
-            file_path = os.path.normpath(event.src_path)
+# Store delete event with timestamp
+recent_deletes[file_name] = (file_path, time.time())
 
-            print(f"[*] Modified: {file_path}")
-            self.process("MODIFIED", file_path)
+def on_modified(self, event):
+if not event.is_directory:
+file_path = os.path.normpath(event.src_path)
+print(f"[*] Modified: {file_path}")
+self.process("MODIFIED", file_path)
 
-            if os.path.exists(file_path):
-                check_integrity(file_path)
+def on_moved(self, event):
+if not event.is_directory:
+src = os.path.normpath(event.src_path)
+dest = os.path.normpath(event.dest_path)
 
-            if self.is_sensitive(file_path) and not self.is_allowed(file_path):
-                generate_alert("UNAUTHORIZED ACCESS TO SENSITIVE FILE", file_path, "MEDIUM")
-
-    def on_moved(self, event):
-        if not event.is_directory:
-            src = os.path.normpath(event.src_path)
-            dest = os.path.normpath(event.dest_path)
-
-            print(f"[>] Moved: {src} -> {dest}")
-            log_event("MOVED", dest, "LOW")
-
-            if os.path.exists(dest):
-                check_integrity(dest)
+print(f"[>] Moved: {src} -> {dest}")
+log_event("MOVED", dest)
 
 
 # -------------------------------
 # Start monitoring
 # -------------------------------
 def start_monitoring():
-    path = "C:/Users/Hemalatha/Documents"
+path = "C:/Users/Hemalatha/Documents"
 
-    if not os.path.exists(path):
-        print(f"[ERROR] Path not found: {path}")
-        return
+if not os.path.exists(path):
+print(f"[ERROR] Path not found: {path}")
+return
 
-    event_handler = MonitorHandler()
-    observer = Observer()
+event_handler = MonitorHandler()
+observer = Observer()
 
-    observer.schedule(event_handler, path, recursive=True)
-    observer.start()
+observer.schedule(event_handler, path, recursive=True)
+observer.start()
 
-    print(f"[+] Monitoring started on: {path}")
+print(f"[+] Monitoring started on: {path}")
 
-    try:
-        while True:
-            time.sleep(5)
+try:
+while True:
+time.sleep(5)
+except KeyboardInterrupt:
+print("\n[!] Stopping monitoring...")
+observer.stop()
 
-    except KeyboardInterrupt:
-        print("\n[!] Stopping monitoring...")
-        observer.stop()
-
-        # ✅ Generate report correctly
-        generate_report()
-
-    observer.join()
+observer.join()

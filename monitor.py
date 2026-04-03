@@ -6,7 +6,7 @@ from watchdog.events import FileSystemEventHandler
 from alert import generate_alert
 from logger import log_event
 
-# Deduplication set (prevents duplicate alerts)
+# Deduplication set
 processed_moves = set()
 
 # -------------------------------
@@ -22,61 +22,70 @@ def load_file(file):
 sensitive_files = load_file("config/sensitive_files.txt")
 allowed_paths = load_file("config/allowed_paths.txt")
 
-# Store recent deletes to detect move
+# Track deletes for MOVE detection
 recent_deletes = {}
-DELETE_WINDOW = 5  # seconds
+DELETE_WINDOW = 5
 
 
 class MonitorHandler(FileSystemEventHandler):
 
+    # 🔥 Common severity logic
+    def get_severity(self, file_path):
+        file_lower = os.path.normpath(file_path).lower()
+
+        is_sensitive = any(
+            os.path.normpath(s).lower() in file_lower
+            for s in sensitive_files
+        )
+
+        is_allowed = any(
+            os.path.normpath(a).lower() in file_lower
+            for a in allowed_paths
+        )
+
+        if is_sensitive and not is_allowed:
+            return "HIGH"
+        elif is_sensitive:
+            return "MEDIUM"
+        else:
+            return "LOW"
+
     def process(self, event_type, file_path):
         file_path = os.path.normpath(file_path)
-        log_event(event_type, file_path)
+        severity = self.get_severity(file_path)
+        log_event(event_type, file_path, severity)
 
     def on_created(self, event):
         if not event.is_directory:
             file_path = os.path.normpath(event.src_path)
             file_name = os.path.basename(file_path)
 
-            print(f"[+] Created: {file_path}")
-            self.process("CREATED", file_path)
-
-            # Detect move using delete + create correlation
+            # 🔥 Detect MOVE (delete + create)
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
 
                 if time.time() - delete_time <= DELETE_WINDOW:
-
-                    print(f"[>] Moved (detected): {src_path} -> {file_path}")
-
-                    src_path_lower = os.path.normpath(src_path).lower()
-                    dest_path_lower = os.path.normpath(file_path).lower()
-
-                    is_from_sensitive = any(
-                        src_path_lower.startswith(os.path.normpath(s).lower())
-                        for s in sensitive_files
-                    )
-
-                    is_to_allowed = any(
-                        dest_path_lower.startswith(os.path.normpath(a).lower())
-                        for a in allowed_paths
-                    )
-
-                    print(f"[DEBUG] from_sensitive={is_from_sensitive}, to_allowed={is_to_allowed}")
-
-                    # Deduplicated alert logic
                     move_key = f"{src_path}->{file_path}"
 
-                    if is_from_sensitive and not is_to_allowed and move_key not in processed_moves:
+                    if move_key not in processed_moves:
                         processed_moves.add(move_key)
-                        generate_alert("UNAUTHORIZED MOVE", file_path)
 
-                    # Optional cleanup (avoid memory growth)
-                    if len(processed_moves) > 100:
-                        processed_moves.clear()
+                        print(f"[>] MOVED: {src_path} -> {file_path}")
 
-                    # Remove delete entry
+                        severity = self.get_severity(src_path)
+
+                        log_event("MOVED", f"{src_path} -> {file_path}", severity)
+
+                        # 🚨 Alert for HIGH severity
+                        if severity == "HIGH":
+                            generate_alert("UNAUTHORIZED MOVE", file_path)
+
                     del recent_deletes[file_name]
+                    return  # stop CREATED log
+
+            # Normal create
+            print(f"[+] Created: {file_path}")
+            self.process("CREATED", file_path)
 
     def on_deleted(self, event):
         if not event.is_directory:
@@ -86,12 +95,12 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[-] Deleted: {file_path}")
             self.process("DELETED", file_path)
 
-            # Store delete event with timestamp
             recent_deletes[file_name] = (file_path, time.time())
 
     def on_modified(self, event):
         if not event.is_directory:
             file_path = os.path.normpath(event.src_path)
+
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
@@ -100,8 +109,14 @@ class MonitorHandler(FileSystemEventHandler):
             src = os.path.normpath(event.src_path)
             dest = os.path.normpath(event.dest_path)
 
-            print(f"[>] Moved: {src} -> {dest}")
-            log_event("MOVED", dest)
+            print(f"[>] MOVED (native): {src} -> {dest}")
+
+            severity = self.get_severity(src)
+
+            log_event("MOVED", f"{src} -> {dest}", severity)
+
+            if severity == "HIGH":
+                generate_alert("UNAUTHORIZED MOVE", dest)
 
 
 # -------------------------------

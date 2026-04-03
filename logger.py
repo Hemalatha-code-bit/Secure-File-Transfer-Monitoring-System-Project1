@@ -9,9 +9,7 @@ if not os.path.exists("logs"):
 def log_event(event_type, file_path, severity="LOW"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    log_entry = (
-        f"{timestamp} | {severity} | {event_type} | {file_path}"
-    )
+    log_entry = f"{timestamp} | {severity} | {event_type} | {file_path}"
 
     print(f"[LOGGED] {severity} | {event_type} | {file_path}")
 

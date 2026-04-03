@@ -1,3 +1,2 @@
-def generate_alert(alert_type, file_path, severity="MEDIUM"):
-    print(f"[ALERT] {severity} | {alert_type} -> {file_path}")
-
+def generate_alert(event_type, file_path):
+print(f"[ALERT] {event_type} -> {file_path}")

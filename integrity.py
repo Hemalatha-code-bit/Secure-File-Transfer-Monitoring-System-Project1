@@ -39,7 +39,7 @@ def check_integrity(file_path):
     # Only alert if hash actually changed
     if old_hash != new_hash:
         if file_path not in alerted_files:
-            generate_alert("INTEGRITY VIOLATION", file_path, "HIGH")
+            generate_alert("INTEGRITY VIOLATION", file_path)
             alerted_files.add(file_path)
 
     # Update hash after check

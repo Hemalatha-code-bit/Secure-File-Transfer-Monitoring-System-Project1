@@ -3,18 +3,17 @@ from datetime import datetime
 
 LOG_FILE = "logs/activity.log"
 
-# Ensure logs folder exists
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
 def log_event(event_type, file_path, severity="LOW"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    log_entry = f"{timestamp} | {severity} | {event_type} | {file_path}"
+    log_entry = (
+        f"{timestamp} | {severity} | {event_type} | {file_path}"
+    )
 
-    # Print to console
     print(f"[LOGGED] {severity} | {event_type} | {file_path}")
 
-    # Write to file
     with open(LOG_FILE, "a") as f:
         f.write(log_entry + "\n")

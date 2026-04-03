@@ -41,7 +41,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Store initial hash (wait for file write)
+            # Store initial hash (wait for file write)
             if os.path.exists(file_path):
                 time.sleep(0.5)
                 check_integrity(file_path)
@@ -99,7 +99,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
-            # 🔐 Integrity check (IMPORTANT)
+            # Integrity check (IMPORTANT)
             if os.path.exists(file_path):
                 time.sleep(0.5)
                 check_integrity(file_path)
@@ -112,7 +112,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[>] Moved: {src} -> {dest}")
             log_event("MOVED", dest)
 
-            # 🔐 Integrity check after move
+            # Integrity check after move
             if os.path.exists(dest):
                 time.sleep(0.5)
                 check_integrity(dest)

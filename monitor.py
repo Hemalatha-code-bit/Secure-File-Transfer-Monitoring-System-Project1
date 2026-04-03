@@ -41,8 +41,9 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Integrity check (store initial hash)
+            # 🔐 Store initial hash (wait for file write)
             if os.path.exists(file_path):
+                time.sleep(0.5)
                 check_integrity(file_path)
 
             # Detect move using delete + create correlation
@@ -74,6 +75,7 @@ class MonitorHandler(FileSystemEventHandler):
                         processed_moves.add(move_key)
                         generate_alert("UNAUTHORIZED MOVE", file_path)
 
+                    # cleanup
                     if len(processed_moves) > 100:
                         processed_moves.clear()
 
@@ -87,7 +89,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[-] Deleted: {file_path}")
             self.process("DELETED", file_path)
 
-            # Store delete event with timestamp
+            # Track delete for move detection
             recent_deletes[file_name] = (file_path, time.time())
 
     def on_modified(self, event):
@@ -97,8 +99,9 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
-            # 🔐 Integrity check (detect tampering)
+            # 🔐 Integrity check (IMPORTANT)
             if os.path.exists(file_path):
+                time.sleep(0.5)
                 check_integrity(file_path)
 
     def on_moved(self, event):
@@ -111,6 +114,7 @@ class MonitorHandler(FileSystemEventHandler):
 
             # 🔐 Integrity check after move
             if os.path.exists(dest):
+                time.sleep(0.5)
                 check_integrity(dest)
 
 

@@ -5,8 +5,11 @@ def calculate_hash(file_path):
 
     try:
         with open(file_path, "rb") as f:
-            while chunk := f.read(4096):
+            for chunk in iter(lambda: f.read(4096), b""):
                 sha256.update(chunk)
+
         return sha256.hexdigest()
-    except:
-        return "ERROR"
+
+    except Exception as e:
+        print(f"[ERROR] Hashing failed for {file_path}: {e}")
+        return None

@@ -1,5 +1,8 @@
 from monitor import start_monitoring
+from report import generate_report
 
 if __name__ == "__main__":
-    print("[+] Starting Secure File Monitoring System...")
-    start_monitoring()
+    try:
+        start_monitoring()
+    finally:
+        generate_report()   # ✅ This generates report when you stop

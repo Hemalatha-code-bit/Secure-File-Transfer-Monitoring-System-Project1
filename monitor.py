@@ -28,10 +28,12 @@ DELETE_WINDOW = 5
 
 class MonitorHandler(FileSystemEventHandler):
 
+    # ✅ Normal events → LOW
     def process(self, event_type, file_path):
         file_path = os.path.normpath(file_path)
-        log_event(event_type, file_path)
+        log_event(event_type, file_path, "LOW")
 
+    # ✅ Unauthorized access → HIGH
     def check_unauthorized_access(self, file_path):
         file_path_lower = file_path.lower()
 
@@ -60,7 +62,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Integrity check → CRITICAL handled in alert.py
+            # 🔐 Integrity check → CRITICAL handled in integrity.py
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
@@ -88,6 +90,7 @@ class MonitorHandler(FileSystemEventHandler):
 
                     move_key = f"{src_path}->{file_path}"
 
+                    # ✅ Unauthorized move → HIGH
                     if (
                         is_from_sensitive
                         and not is_to_allowed
@@ -119,7 +122,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
-            # 🔐 Integrity check → CRITICAL
+            # 🔐 Integrity → CRITICAL
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
@@ -131,9 +134,11 @@ class MonitorHandler(FileSystemEventHandler):
             dest = os.path.normpath(event.dest_path)
 
             print(f"[>] Moved: {src} -> {dest}")
-            log_event("MOVED", dest)
 
-            # 🔐 Integrity check → CRITICAL
+            # ✅ Normal move → LOW
+            log_event("MOVED", dest, "LOW")
+
+            # 🔐 Integrity → CRITICAL
             if os.path.exists(dest):
                 check_integrity(dest)
 

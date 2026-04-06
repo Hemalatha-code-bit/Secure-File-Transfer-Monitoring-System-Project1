@@ -28,12 +28,12 @@ DELETE_WINDOW = 5
 
 class MonitorHandler(FileSystemEventHandler):
 
-    # ✅ Normal events → LOW
+    #  Normal events → LOW
     def process(self, event_type, file_path):
         file_path = os.path.normpath(file_path)
         log_event(event_type, file_path, "LOW")
 
-    # ✅ Unauthorized access → HIGH
+    #  Unauthorized access → HIGH
     def check_unauthorized_access(self, file_path):
         file_path_lower = file_path.lower()
 
@@ -62,13 +62,13 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Integrity → CRITICAL (handled in integrity.py)
+            #  Integrity → CRITICAL (handled in integrity.py)
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
             self.check_unauthorized_access(file_path)
 
-            # 🔄 Detect move (delete + create)
+            #  Detect move (delete + create)
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
 
@@ -90,7 +90,7 @@ class MonitorHandler(FileSystemEventHandler):
 
                     move_key = f"{src_path}->{file_path}"
 
-                    # 🚨 Unauthorized move → HIGH
+                    #  Unauthorized move → HIGH
                     if (
                         is_from_sensitive
                         and not is_to_allowed
@@ -123,7 +123,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[*] Modified: {file_path}")
             self.process("MODIFIED", file_path)
 
-            # 🔐 Integrity → CRITICAL
+            #  Integrity → CRITICAL
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
@@ -136,10 +136,10 @@ class MonitorHandler(FileSystemEventHandler):
 
             print(f"[>] Moved: {src} -> {dest}")
 
-            # ✅ Normal move → LOW
+            #  Normal move → LOW
             log_event("MOVED", dest, "LOW")
 
-            # 🔐 Integrity → CRITICAL
+            #  Integrity → CRITICAL
             if os.path.exists(dest):
                 check_integrity(dest)
 

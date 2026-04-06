@@ -2,6 +2,8 @@ import os
 from datetime import datetime
 
 LOG_FILE = "logs/activity.log"
+REPORT_FILE = "logs/final_report.txt"   # ADD THIS
+
 
 def generate_report():
     if not os.path.exists(LOG_FILE):
@@ -10,7 +12,7 @@ def generate_report():
 
     total_events = 0
     total_alerts = 0
-    high = medium = low = 0
+    high = medium = low = critical = 0
     event_counts = {}
     incidents = []
 
@@ -26,31 +28,55 @@ def generate_report():
 
         timestamp, severity, event, file_path = [p.strip() for p in parts]
 
+        # Count severity
         if severity == "HIGH":
             high += 1
-            incidents.append((event, file_path))
+            incidents.append(f"[HIGH] {event} -> {file_path}")
         elif severity == "MEDIUM":
             medium += 1
+        elif severity == "CRITICAL":
+            critical += 1
+            incidents.append(f"[CRITICAL] {event} -> {file_path}")
         else:
             low += 1
 
-        if "VIOLATION" in event or "UNAUTHORIZED" in event:
+        # Count alerts
+        if severity in ["HIGH", "CRITICAL"]:
             total_alerts += 1
 
+        # Event breakdown
         event_counts[event] = event_counts.get(event, 0) + 1
 
-    print("\n========== SECURITY AUDIT REPORT ==========")
-    print(f"Generated On: {datetime.now()}")
+    # -------------------------------
+    # Build report content
+    # -------------------------------
+    report = "========== SECURITY AUDIT REPORT ==========\n"
+    report += f"Generated On: {datetime.now()}\n\n"
 
-    print("\n--- SUMMARY ---")
-    print(f"Total Events: {total_events}")
-    print(f"Total Alerts: {total_alerts}")
-    print(f"HIGH: {high}, MEDIUM: {medium}, LOW: {low}")
+    report += "--- SUMMARY ---\n"
+    report += f"Total Events: {total_events}\n"
+    report += f"Total Alerts: {total_alerts}\n"
+    report += f"HIGH: {high}, MEDIUM: {medium}, LOW: {low}, CRITICAL: {critical}\n\n"
 
-    print("\n--- EVENT BREAKDOWN ---")
+    report += "--- EVENT BREAKDOWN ---\n"
     for event, count in event_counts.items():
-        print(f"{event}: {count}")
+        report += f"{event}: {count}\n"
 
-    print("\n--- SECURITY INCIDENTS ---")
-    for event, file_path in incidents:
-        print(f"[HIGH] {event} -> {file_path}")
+    report += "\n--- SECURITY INCIDENTS ---\n"
+    for incident in incidents:
+        report += incident + "\n"
+
+    # -------------------------------
+    # Save to file IMPORTANT
+    # -------------------------------
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    with open(REPORT_FILE, "w") as f:
+        f.write(report)
+
+    # -------------------------------
+    # Print also (optional)
+    # -------------------------------
+    print(report)
+    print(f"[+] Report saved at: {REPORT_FILE}")

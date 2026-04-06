@@ -3,8 +3,10 @@ from datetime import datetime
 
 LOG_FILE = "logs/activity.log"
 
+# Ensure logs directory exists
 if not os.path.exists("logs"):
     os.makedirs("logs")
+
 
 def log_event(event_type, file_path, severity="LOW"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

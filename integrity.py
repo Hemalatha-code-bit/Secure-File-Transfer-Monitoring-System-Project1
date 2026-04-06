@@ -34,9 +34,13 @@ def check_integrity(file_path):
 
     old_hash = hashes[file_path]
 
-    # Detect change EVERY time
+    # 🔴 Integrity violation → CRITICAL
     if old_hash != new_hash:
-        generate_alert("INTEGRITY VIOLATION", file_path)
+        generate_alert(
+            "INTEGRITY VIOLATION",
+            file_path,
+            "CRITICAL"
+        )
 
     # Always update hash
     hashes[file_path] = new_hash

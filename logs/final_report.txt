@@ -1,1 +1,41 @@
+========== SECURITY AUDIT REPORT ==========
+Generated On: 2026-04-06 13:33:04.834820
 
+--- SUMMARY ---
+Total Events: 82
+Total Alerts: 23
+HIGH: 18, MEDIUM: 0, LOW: 58, CRITICAL: 5
+
+--- EVENT BREAKDOWN ---
+DELETED: 24
+CREATED: 16
+MODIFIED: 28
+MOVED: 3
+INTEGRITY VIOLATION: 5
+UNAUTHORIZED ACCESS TO SENSITIVE FILE: 4
+UNAUTHORIZED MOVE: 1
+
+--- SECURITY INCIDENTS ---
+[HIGH] CREATED -> C:\Users\Hemalatha\Documents\secret.txt
+[HIGH] MODIFIED -> C:\Users\Hemalatha\Documents\secret.txt
+[HIGH] CREATED -> C:\Users\Hemalatha\Documents\secret\secret.txt
+[HIGH] MODIFIED -> C:\Users\Hemalatha\Documents\secret\secret.txt
+[HIGH] MODIFIED -> C:\Users\Hemalatha\Documents\secret\secret.txt
+[HIGH] DELETED -> C:\Users\Hemalatha\Documents\secret\secret.txt
+[HIGH] MOVED -> C:\Users\Hemalatha\Documents\secret\secret.txt -> C:\Users\Hemalatha\Documents\random\secret.txt
+[HIGH] CREATED -> C:\Users\Hemalatha\Documents\secret\secret1.txt
+[HIGH] MODIFIED -> C:\Users\Hemalatha\Documents\secret\secret1.txt
+[HIGH] MODIFIED -> C:\Users\Hemalatha\Documents\secret\secret1.txt
+[HIGH] DELETED -> C:\Users\Hemalatha\Documents\secret\secret1.txt
+[HIGH] MOVED -> C:\Users\Hemalatha\Documents\secret\secret1.txt -> C:\Users\Hemalatha\Documents\safe\secret1.txt
+[HIGH] DELETED -> C:\Users\Hemalatha\Documents\secret\policy.txt
+[CRITICAL] INTEGRITY VIOLATION -> C:\Users\Hemalatha\Documents\Intergrity.txt
+[CRITICAL] INTEGRITY VIOLATION -> C:\Users\Hemalatha\Documents\Voil.txt
+[CRITICAL] INTEGRITY VIOLATION -> C:\Users\Hemalatha\Documents\poil.txt
+[HIGH] UNAUTHORIZED ACCESS TO SENSITIVE FILE -> C:\Users\Hemalatha\Documents\secret\poil.txt
+[HIGH] UNAUTHORIZED ACCESS TO SENSITIVE FILE -> C:\Users\Hemalatha\Documents\secret\poil.txt
+[HIGH] UNAUTHORIZED MOVE -> C:\Users\Hemalatha\Documents\random\poil.txt
+[CRITICAL] INTEGRITY VIOLATION -> C:\Users\Hemalatha\Documents\random\Aoil.txt
+[HIGH] UNAUTHORIZED ACCESS TO SENSITIVE FILE -> C:\Users\Hemalatha\Documents\secret\Aoil.txt
+[HIGH] UNAUTHORIZED ACCESS TO SENSITIVE FILE -> C:\Users\Hemalatha\Documents\secret\Aoil.txt
+[CRITICAL] INTEGRITY VIOLATION -> C:\Users\Hemalatha\Documents\poil.txt

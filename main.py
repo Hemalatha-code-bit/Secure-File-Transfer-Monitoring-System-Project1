@@ -5,4 +5,4 @@ if __name__ == "__main__":
     try:
         start_monitoring()
     finally:
-        generate_report()   # ✅ This generates report when you stop
+        generate_report()   #  This generates report when you stop

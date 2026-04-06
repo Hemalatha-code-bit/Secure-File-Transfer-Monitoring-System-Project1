@@ -62,13 +62,13 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[+] Created: {file_path}")
             self.process("CREATED", file_path)
 
-            # 🔐 Integrity check → CRITICAL handled in integrity.py
+            # 🔐 Integrity → CRITICAL (handled in integrity.py)
             if os.path.exists(file_path):
                 check_integrity(file_path)
 
             self.check_unauthorized_access(file_path)
 
-            # Move detection
+            # 🔄 Detect move (delete + create)
             if file_name in recent_deletes:
                 src_path, delete_time = recent_deletes[file_name]
 
@@ -90,7 +90,7 @@ class MonitorHandler(FileSystemEventHandler):
 
                     move_key = f"{src_path}->{file_path}"
 
-                    # ✅ Unauthorized move → HIGH
+                    # 🚨 Unauthorized move → HIGH
                     if (
                         is_from_sensitive
                         and not is_to_allowed
@@ -113,6 +113,7 @@ class MonitorHandler(FileSystemEventHandler):
             print(f"[-] Deleted: {file_path}")
             self.process("DELETED", file_path)
 
+            # Track delete for move detection
             recent_deletes[file_name] = (file_path, time.time())
 
     def on_modified(self, event):

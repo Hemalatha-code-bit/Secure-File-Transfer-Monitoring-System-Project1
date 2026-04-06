@@ -9,6 +9,7 @@ HASH_FILE = "hash_store.json"
 def load_hashes():
     if not os.path.exists(HASH_FILE):
         return {}
+
     with open(HASH_FILE, "r") as f:
         return json.load(f)
 

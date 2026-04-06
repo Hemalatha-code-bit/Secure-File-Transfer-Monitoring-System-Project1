@@ -1,4 +1,3 @@
-from report import generate_report
-
-# After stopping monitoring
-generate_report()
+if __name__ == "__main__":
+    print("[+] Starting Secure File Monitoring System...")
+    start_monitoring()
